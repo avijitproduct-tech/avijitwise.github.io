@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Avijit Chakraborty — APM & Product Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --cream: #f5f0e8;
+  --ink: #1a1a18;
+  --olive: #3d5a3e;
+  --clay: #c4714a;
+  --warm-gray: #9a9488;
+  --light-border: #e0dbd0;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  cursor: none;
+  overflow-x: hidden;
+}
+
+/* CUSTOM CURSOR */
+.cursor {
+  position: fixed;
+  width: 8px; height: 8px;
+  background: var(--clay);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
+}
+.cursor-ring {
+  position: fixed;
+  width: 32px; height: 32px;
+  border: 1px solid var(--clay);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.18s ease, width 0.3s, height 0.3s, opacity 0.3s;
+  opacity: 0.5;
+}
+body:hover .cursor { opacity: 1; }
+
+/* NOISE TEXTURE */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.4;
+}
+
+/* NAV */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 60px;
+  z-index: 100;
+  mix-blend-mode: multiply;
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.nav-links {
+  display: flex;
+  gap: 36px;
+  list-style: none;
+}
+.nav-links a {
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  transition: color 0.25s;
+}
+.nav-links a:hover { color: var(--ink); }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 60px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--clay);
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.3s forwards;
+}
+
+.hero-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(4.5rem, 11vw, 10rem);
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -3px;
+  color: var(--ink);
+  opacity: 0;
+  animation: fadeUp 1s ease 0.5s forwards;
+}
+.hero-name em {
+  font-style: italic;
+  color: var(--olive);
+}
+
+.hero-tagline {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.8s forwards;
+}
+.hero-tagline-text {
+  font-size: 15px;
+  color: var(--warm-gray);
+  font-weight: 300;
+  max-width: 420px;
+  line-height: 1.7;
+}
+.hero-tagline-line {
+  width: 60px;
+  height: 1px;
+  background: var(--light-border);
+  flex-shrink: 0;
+}
+
+.hero-meta {
+  position: absolute;
+  right: 60px;
+  bottom: 80px;
+  text-align: right;
+  opacity: 0;
+  animation: fadeUp 0.8s ease 1s forwards;
+}
+.hero-meta p {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  margin-bottom: 6px;
+}
+.hero-meta a {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--clay);
+  text-decoration: none;
+  border-bottom: 1px solid var(--clay);
+  padding-bottom: 1px;
+}
+
+.hero-scroll {
+  position: absolute;
+  left: 60px;
+  bottom: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  animation: fadeIn 1s ease 1.4s forwards;
+}
+.scroll-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  writing-mode: vertical-rl;
+}
+.scroll-line {
+  width: 1px;
+  height: 48px;
+  background: var(--light-border);
+  position: relative;
+  overflow: hidden;
+}
+.scroll-line::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--clay);
+  animation: scrollDown 2s ease-in-out 2s infinite;
+}
+@keyframes scrollDown {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+/* SECTIONS COMMON */
+section {
+  padding: 120px 60px;
+  border-top: 1px solid var(--light-border);
+  position: relative;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  margin-bottom: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--light-border);
+}
+
+/* ABOUT */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 80px;
+  align-items: start;
+}
+.about-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+.about-headline em { font-style: italic; color: var(--olive); }
+.about-body {
+  font-size: 15px;
+  line-height: 1.9;
+  color: #444440;
+  margin-bottom: 28px;
+}
+.about-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 48px;
+  border-top: 1px solid var(--light-border);
+  padding-top: 32px;
+}
+.stat-item { padding-right: 24px; }
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.8rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--ink);
+}
+.stat-num span { color: var(--clay); font-size: 1.8rem; }
+.stat-label {
+  font-size: 11px;
+  color: var(--warm-gray);
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+
+/* WORK */
+.work-list { }
+.work-item {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 40px;
+  align-items: start;
+  padding: 40px 0;
+  border-bottom: 1px solid var(--light-border);
+  transition: all 0.3s;
+  text-decoration: none;
+  color: inherit;
+  cursor: none;
+}
+.work-item:first-child { border-top: 1px solid var(--light-border); }
+.work-item:hover .work-company { color: var(--clay); }
+.work-item:hover .work-arrow { transform: translate(4px, -4px); }
+.work-company {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  transition: color 0.25s;
+}
+.work-meta {
+  font-size: 11px;
+  color: var(--warm-gray);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.work-desc {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #555550;
+  padding-top: 6px;
+}
+.work-highlights {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.work-tag {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border: 1px solid var(--light-border);
+  color: var(--warm-gray);
+  border-radius: 20px;
+}
+.work-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 6px;
+}
+.work-period {
+  font-size: 11px;
+  color: var(--warm-gray);
+  letter-spacing: 1px;
+}
+.work-arrow {
+  font-size: 18px;
+  color: var(--warm-gray);
+  transition: transform 0.3s;
+}
+.work-impact {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--olive);
+}
+
+/* AI PROJECTS */
+.projects-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-bottom: 72px;
+}
+.projects-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+.projects-headline em { font-style: italic; color: var(--clay); }
+.projects-subtext {
+  font-size: 14px;
+  color: var(--warm-gray);
+  line-height: 1.8;
+  align-self: end;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+.project-card {
+  background: white;
+  padding: 36px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: none;
+}
+.project-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  z-index: 0;
+}
+.project-card:hover::before { transform: translateY(0); }
+.project-card:hover .project-num,
+.project-card:hover .project-title,
+.project-card:hover .project-desc,
+.project-card:hover .project-tags span,
+.project-card:hover .project-status { color: rgba(255,255,255,0.9); }
+.project-card:hover .project-title { color: white; }
+.project-card:hover .project-tags span { border-color: rgba(255,255,255,0.2); }
+.project-card > * { position: relative; z-index: 1; }
+
+.project-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem;
+  font-weight: 300;
+  color: var(--light-border);
+  line-height: 1;
+  margin-bottom: 24px;
+  transition: color 0.4s;
+}
+.project-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 14px;
+  transition: color 0.4s;
+}
+.project-desc {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #666660;
+  margin-bottom: 24px;
+  transition: color 0.4s;
+}
+.project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.project-tags span {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border: 1px solid var(--light-border);
+  color: var(--warm-gray);
+  border-radius: 20px;
+  transition: all 0.4s;
+}
+.project-status {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--clay);
+  transition: color 0.4s;
+}
+.status-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--clay);
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* SKILLS */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+}
+.skill-group h4 {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--light-border);
+}
+.skill-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skill-list li {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.skill-list li::before {
+  content: '';
+  width: 3px; height: 3px;
+  background: var(--clay);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* CONTACT */
+.contact-inner {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.contact-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -2px;
+}
+.contact-headline em { font-style: italic; color: var(--olive); }
+.contact-links { display: flex; flex-direction: column; gap: 20px; }
+.contact-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--light-border);
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.25s;
+  cursor: none;
+}
+.contact-link:hover { padding-left: 10px; }
+.contact-link:hover .cl-arrow { transform: translate(4px, -4px); color: var(--clay); }
+.cl-platform {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+}
+.cl-value {
+  font-size: 14px;
+  color: var(--ink);
+  margin-top: 2px;
+}
+.cl-arrow { font-size: 18px; color: var(--warm-gray); transition: all 0.25s; }
+
+/* FOOTER */
+footer {
+  padding: 32px 60px;
+  border-top: 1px solid var(--light-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+footer p { font-size: 11px; color: var(--warm-gray); letter-spacing: 1px; }
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  nav { padding: 24px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 0 24px 60px; }
+  .hero-meta, .hero-scroll { display: none; }
+  section { padding: 80px 24px; }
+  .about-grid, .projects-intro, .contact-inner { grid-template-columns: 1fr; gap: 40px; }
+  .work-item { grid-template-columns: 1fr; gap: 12px; }
+  .work-right { align-items: flex-start; }
+  .projects-grid { grid-template-columns: 1fr; gap: 2px; }
+  .skills-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Avijit ✦</a>
+  <ul class="nav-links">
+    <li><a href="#work">Work</a></li>
+    <li><a href="#projects">AI Projects</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="border:none; padding-top:0;">
+  <div class="hero-eyebrow">Associate Product Manager · Bangalore, India</div>
+  <h1 class="hero-name">
+    Avijit<br>
+    <em>Chakra</em>borty
+  </h1>
+  <div class="hero-tagline">
+    <div class="hero-tagline-line"></div>
+    <p class="hero-tagline-text">Building products at the intersection of gaming, creator economy & AI. Shipped 3 MVPs. Driven by data, shaped by craft.</p>
+  </div>
+  <div class="hero-meta">
+    <p>Open to work</p>
+    <a href="mailto:hello@avijitwise.com">hello@avijitwise.com</a>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span class="scroll-label">Scroll</span>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-label">About</div>
+  <div class="about-grid">
+    <div>
+      <h2 class="about-headline">PM with a<br><em>builder's</em><br>instinct.</h2>
+    </div>
+    <div>
+      <p class="about-body">I'm an APM with a Computer Science background — which means I think in systems, speak in SQL, and never have to ask engineering twice what's technically feasible.</p>
+      <p class="about-body">In 1.2 years of product internships, I've shipped a UGC creator marketplace from zero (200+ creators, 3.2x ROAS), improved activation at a 90M+ user gaming platform, and coordinated cross-functional teams to deliver features 70% faster than prior benchmarks.</p>
+      <p class="about-body">I gravitate toward early-stage problems — the kind where the roadmap doesn't exist yet and the answer lives in user behaviour data.</p>
+      <div class="about-stats">
+        <div class="stat-item">
+          <div class="stat-num">3<span>×</span></div>
+          <div class="stat-label">MVPs Shipped</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">9<span>%</span></div>
+          <div class="stat-label">Activation Uplift at MPL</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">3.2<span>×</span></div>
+          <div class="stat-label">ROAS at Crivey</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORK -->
+<section id="work">
+  <div class="section-label">Experience</div>
+  <div class="work-list">
+
+    <div class="work-item reveal">
+      <div>
+        <div class="work-company">MPL</div>
+        <div class="work-meta">Product Manager Intern · Bangalore</div>
+      </div>
+      <div>
+        <p class="work-desc">Worked on D2C & Real Money Gaming products for a $50M ARR platform. Defined a 7-tier league system validated across USA & Europe. Improved activation by 9% in a $1 game lobby by redesigning the discovery-to-engagement funnel.</p>
+        <div class="work-highlights">
+          <span class="work-tag">RMG</span>
+          <span class="work-tag">Funnel Analysis</span>
+          <span class="work-tag">JSON Config</span>
+          <span class="work-tag">D2C Gaming</span>
+          <span class="work-tag">Content Strategy</span>
+        </div>
+      </div>
+      <div class="work-right">
+        <span class="work-period">Jul – Sep 2025</span>
+        <span class="work-impact">9% activation↑</span>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+
+    <div class="work-item reveal">
+      <div>
+        <div class="work-company">Career Crush</div>
+        <div class="work-meta">Product Manager Intern · Remote</div>
+      </div>
+      <div>
+        <p class="work-desc">B2B2C HRTech marketplace for recruitment & mentorship. Designed IA for paid upsells contributing to 8% conversion uplift. Led LLaMA 3 parser integration ensuring SOC2 compliance. Delivered Job Seeker vertical 70% faster than prior timelines.</p>
+        <div class="work-highlights">
+          <span class="work-tag">HRTech</span>
+          <span class="work-tag">LLM / LLaMA 3</span>
+          <span class="work-tag">RBAC · JWT · OAuth</span>
+          <span class="work-tag">Marketplace</span>
+        </div>
+      </div>
+      <div class="work-right">
+        <span class="work-period">Apr – Jun 2025</span>
+        <span class="work-impact">70% faster delivery</span>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+
+    <div class="work-item reveal">
+      <div>
+        <div class="work-company">Crivey</div>
+        <div class="work-meta">Product & UI/UX Intern · Dubai (Remote)</div>
+      </div>
+      <div>
+        <p class="work-desc">Adtech marketplace connecting brands with UGC creators. Sole PM — shipped the full MVP in 3 months, built creator funnel that onboarded 200+ creators, and delivered 3.2× ROAS for brand partners. Architected AES-128 HLS content protection saving 89% vs DRM.</p>
+        <div class="work-highlights">
+          <span class="work-tag">0→1 Product</span>
+          <span class="work-tag">UGC Marketplace</span>
+          <span class="work-tag">Creator Economy</span>
+          <span class="work-tag">GTM Strategy</span>
+        </div>
+      </div>
+      <div class="work-right">
+        <span class="work-period">Nov 2024 – Feb 2025</span>
+        <span class="work-impact">3.2× ROAS</span>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- AI PROJECTS -->
+<section id="projects">
+  <div class="section-label">AI Projects</div>
+  <div class="projects-intro reveal">
+    <h2 class="projects-headline">Products I'm<br>building with <em>AI.</em></h2>
+    <p class="projects-subtext">Each project is rooted in a real problem I encountered during my internships. Built with free-tier APIs — proof that good products don't need big budgets, just sharp thinking.</p>
+  </div>
+
+  <div class="projects-grid">
+
+    <div class="project-card reveal">
+      <div class="project-num">01</div>
+      <h3 class="project-title">CreatorBrief AI</h3>
+      <p class="project-desc">At Crivey, briefs were written manually, taking hours per brand. This tool lets you paste a brand name + product, and generates a complete UGC video brief — hook, messaging, format, call-to-action — in 10 seconds.</p>
+      <div class="project-tags">
+        <span>Claude API</span><span>Adtech</span><span>Creator Tools</span><span>React</span>
+      </div>
+      <div class="project-status"><span class="status-dot"></span>In Progress · Coming Soon</div>
+    </div>
+
+    <div class="project-card reveal">
+      <div class="project-num">02</div>
+      <h3 class="project-title">GameBalance GPT</h3>
+      <p class="project-desc">At MPL I tuned game difficulty via JSON configs, using CPDAU and GMV as signals. This tool takes player engagement data as input and uses AI to recommend difficulty, pacing, and reward adjustments — no engineering needed.</p>
+      <div class="project-tags">
+        <span>Claude API</span><span>Gaming</span><span>Game Design</span><span>D3.js</span>
+      </div>
+      <div class="project-status"><span class="status-dot"></span>In Progress · Coming Soon</div>
+    </div>
+
+    <div class="project-card reveal">
+      <div class="project-num">03</div>
+      <h3 class="project-title">PM Copilot</h3>
+      <p class="project-desc">A conversational AI assistant for product managers. Describe a feature idea in plain English and get a full PRD, user stories, success metrics, and edge cases — formatted and ready to paste into Confluence or Notion.</p>
+      <div class="project-tags">
+        <span>Claude API</span><span>PM Tools</span><span>LLM</span><span>Productivity</span>
+      </div>
+      <div class="project-status"><span class="status-dot"></span>In Progress · Coming Soon</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-label">Skills</div>
+  <div class="skills-grid reveal">
+    <div class="skill-group">
+      <h4>Product</h4>
+      <ul class="skill-list">
+        <li>Product Discovery</li>
+        <li>GTM Strategy</li>
+        <li>Funnel Analysis</li>
+        <li>A/B Experimentation</li>
+        <li>Roadmapping</li>
+        <li>AI Prototyping</li>
+      </ul>
+    </div>
+    <div class="skill-group">
+      <h4>Data & Analytics</h4>
+      <ul class="skill-list">
+        <li>SQL</li>
+        <li>Mixpanel</li>
+        <li>Google Analytics</li>
+        <li>BigQuery (GCP)</li>
+        <li>Tableau</li>
+        <li>Excel / Sheets</li>
+      </ul>
+    </div>
+    <div class="skill-group">
+      <h4>Tools</h4>
+      <ul class="skill-list">
+        <li>Figma</li>
+        <li>Jira · Confluence</li>
+        <li>Postman</li>
+        <li>Miro</li>
+        <li>Google AI Studio</li>
+        <li>Dialogflow</li>
+      </ul>
+    </div>
+    <div class="skill-group">
+      <h4>Technical</h4>
+      <ul class="skill-list">
+        <li>Python</li>
+        <li>JavaScript</li>
+        <li>HTML / CSS</li>
+        <li>REST APIs</li>
+        <li>LLM Integration</li>
+        <li>JSON Config Systems</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-label">Contact</div>
+  <div class="contact-inner">
+    <h2 class="contact-headline reveal">
+      Let's build<br>something<br><em>together.</em>
+    </h2>
+    <div class="contact-links reveal">
+      <a href="mailto:hello@avijitwise.com" class="contact-link">
+        <div>
+          <div class="cl-platform">Email</div>
+          <div class="cl-value">hello@avijitwise.com</div>
+        </div>
+        <span class="cl-arrow">↗</span>
+      </a>
+      <a href="https://linkedin.com/in/avijitwise" target="_blank" class="contact-link">
+        <div>
+          <div class="cl-platform">LinkedIn</div>
+          <div class="cl-value">linkedin.com/in/avijitwise</div>
+        </div>
+        <span class="cl-arrow">↗</span>
+      </a>
+      <a href="https://github.com/avijitwise" target="_blank" class="contact-link">
+        <div>
+          <div class="cl-platform">GitHub</div>
+          <div class="cl-value">github.com/avijitwise</div>
+        </div>
+        <span class="cl-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 Avijit Chakraborty</p>
+  <p>Designed & built by Avijit · Bangalore, India</p>
+</footer>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+document.querySelectorAll('a, button, .work-item, .project-card').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '14px';
+    cursor.style.height = '14px';
+    ring.style.width = '48px';
+    ring.style.height = '48px';
+    ring.style.opacity = '0.8';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '8px';
+    cursor.style.height = '8px';
+    ring.style.width = '32px';
+    ring.style.height = '32px';
+    ring.style.opacity = '0.5';
+  });
+});
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 80);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
