@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GameBalance GPT — AI Difficulty Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne+Mono&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #080c0a; --surface: #0f1510; --surface2: #141c15; --border: #1e2b1f;
+  --green: #4ade80; --green-dim: #1a3d22; --amber: #f59e0b; --red: #f87171;
+  --text: #e8f0e9; --muted: #5a7a5c;
+  --mono: 'Syne Mono', monospace; --serif: 'Cormorant Garamond', serif; --sans: 'DM Sans', sans-serif;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 300; min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(74,222,128,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.025) 1px, transparent 1px);
+  background-size: 40px 40px; pointer-events: none; z-index: 0;
+}
+body::after {
+  content: ''; position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none; z-index: 0;
+}
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+/* HEADER */
+header { border-bottom: 1px solid var(--border); padding: 28px 0; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon { width: 36px; height: 36px; border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 14px; color: var(--green); position: relative; }
+.logo-icon::before { content: ''; position: absolute; inset: -3px; border: 1px solid var(--green-dim); }
+.logo-text { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; letter-spacing: -0.3px; }
+.logo-text span { color: var(--green); font-style: italic; }
+.header-right { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.status-pill { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+.usage-badge { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); padding: 6px 14px; font-family: var(--mono); font-size: 10px; letter-spacing: 1px; }
+.usage-pips { display: flex; gap: 4px; }
+.pip { width: 8px; height: 8px; border-radius: 1px; }
+.built-by { font-size: 11px; color: var(--muted); } .built-by a { color: var(--green); text-decoration: none; }
+
+/* HERO */
+.hero { padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.hero-label { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--green); text-transform: uppercase; margin-bottom: 20px; opacity:0; animation: fadeUp 0.6s ease 0.1s forwards; }
+.hero-title { font-family: var(--serif); font-size: clamp(2.8rem,7vw,5.5rem); font-weight: 300; line-height: 1; letter-spacing: -2px; margin-bottom: 24px; opacity:0; animation: fadeUp 0.7s ease 0.2s forwards; }
+.hero-title em { font-style: italic; color: var(--green); }
+.hero-desc { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 540px; opacity:0; animation: fadeUp 0.7s ease 0.35s forwards; }
+.hero-desc strong { color: var(--text); font-weight: 400; }
+.limit-notice { margin-top: 32px; padding: 16px 20px; background: var(--green-dim); border: 1px solid var(--green); display: flex; align-items: center; gap: 14px; font-size: 13px; color: #a3e4b5; line-height: 1.6; opacity:0; animation: fadeUp 0.6s ease 0.5s forwards; }
+.limit-notice-icon { font-size: 18px; flex-shrink: 0; }
+.limit-notice strong { color: var(--green); }
+
+/* MAIN */
+.main { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin: 40px 0; }
+.panel { background: var(--surface); border: 1px solid var(--border); padding: 32px; }
+.panel-title { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--green); margin-bottom: 28px; display: flex; align-items: center; gap: 10px; }
+.panel-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.form-hint { font-size: 11px; color: var(--muted); opacity: 0.6; margin-top: 4px; }
+.form-input,.form-select,.form-textarea { width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:13px; padding:12px 14px; outline:none; transition:border-color 0.2s; appearance:none; }
+.form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--green); }
+.form-input::placeholder { color:var(--muted); opacity:0.5; }
+.form-textarea { resize:vertical; min-height:80px; line-height:1.6; }
+.form-select { cursor:pointer; } .form-select option { background:var(--surface2); }
+.slider-row { display:flex; align-items:center; gap:12px; }
+.form-slider { flex:1; appearance:none; height:2px; background:var(--border); outline:none; cursor:pointer; }
+.form-slider::-webkit-slider-thumb { appearance:none; width:14px; height:14px; background:var(--green); border-radius:0; cursor:pointer; }
+.slider-val { font-family:var(--mono); font-size:13px; color:var(--green); min-width:44px; text-align:right; }
+.analyze-btn { width:100%; background:var(--green); border:none; color:var(--bg); font-family:var(--mono); font-size:12px; letter-spacing:2px; text-transform:uppercase; padding:16px; cursor:pointer; margin-top:8px; transition:all 0.2s; font-weight:600; }
+.analyze-btn:hover { background:#6ee7a0; }
+.analyze-btn:disabled { background:var(--green-dim); color:var(--green); cursor:not-allowed; }
+.exhausted-msg { display:none; margin-top:12px; padding:14px; background:rgba(248,113,113,0.05); border:1px solid rgba(248,113,113,0.3); font-family:var(--mono); font-size:11px; color:var(--red); text-align:center; line-height:1.8; }
+
+/* RESULTS */
+.results-panel { background:var(--surface); border:1px solid var(--border); padding:32px; min-height:500px; display:flex; flex-direction:column; }
+.results-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; color:var(--muted); }
+.empty-icon { font-size:2.5rem; opacity:0.3; }
+.empty-text { font-family:var(--mono); font-size:11px; letter-spacing:1px; line-height:1.8; }
+.loading { flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+.loading.active { display:flex; }
+.loader-bars { display:flex; gap:4px; align-items:flex-end; height:40px; }
+.loader-bar { width:4px; background:var(--green); border-radius:1px; animation:barPulse 1.2s ease infinite; }
+.loader-bar:nth-child(1){animation-delay:0s;height:20px;} .loader-bar:nth-child(2){animation-delay:.15s;height:32px;}
+.loader-bar:nth-child(3){animation-delay:.3s;height:40px;} .loader-bar:nth-child(4){animation-delay:.45s;height:28px;}
+.loader-bar:nth-child(5){animation-delay:.6s;height:16px;}
+@keyframes barPulse { 0%,100%{opacity:0.2;transform:scaleY(0.6);} 50%{opacity:1;transform:scaleY(1);} }
+.loader-label { font-family:var(--mono); font-size:11px; letter-spacing:1.5px; color:var(--green); text-transform:uppercase; }
+.results-content { display:none; flex-direction:column; gap:20px; }
+.results-content.active { display:flex; }
+.result-game-name { font-family:var(--serif); font-size:1.6rem; font-weight:300; letter-spacing:-0.5px; }
+.result-game-name em { font-style:italic; color:var(--green); }
+.score-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); }
+.score-box { background:var(--surface2); padding:16px; text-align:center; }
+.score-val { font-family:var(--serif); font-size:2rem; font-weight:300; line-height:1; }
+.score-val.good{color:var(--green);} .score-val.warn{color:var(--amber);} .score-val.bad{color:var(--red);}
+.score-lbl { font-family:var(--mono); font-size:9px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; margin-top:4px; }
+.reco-title { font-family:var(--mono); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.reco-list { display:flex; flex-direction:column; gap:8px; }
+.reco-item { background:var(--surface2); border-left:2px solid var(--border); padding:12px 14px; font-size:13px; line-height:1.6; color:#bbc8bc; }
+.reco-item.priority-high{border-left-color:var(--red);} .reco-item.priority-med{border-left-color:var(--amber);} .reco-item.priority-low{border-left-color:var(--green);}
+.reco-item-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.reco-item-label { font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--text); font-weight:500; }
+.priority-badge { font-family:var(--mono); font-size:9px; letter-spacing:1px; text-transform:uppercase; padding:2px 7px; }
+.priority-badge.high{background:rgba(248,113,113,0.1);color:var(--red);} .priority-badge.med{background:rgba(245,158,11,0.1);color:var(--amber);} .priority-badge.low{background:rgba(74,222,128,0.1);color:var(--green);}
+.json-label { font-family:var(--mono); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.json-block { background:#060a07; border:1px solid var(--border); padding:16px; font-family:var(--mono); font-size:11px; line-height:1.8; color:#7db87f; overflow-x:auto; white-space:pre; position:relative; }
+.copy-json-btn { position:absolute; top:10px; right:10px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-family:var(--mono); font-size:9px; letter-spacing:1px; text-transform:uppercase; padding:4px 10px; cursor:pointer; transition:all 0.2s; }
+.copy-json-btn:hover { color:var(--green); border-color:var(--green); }
+.remaining-notice { background:var(--surface2); border:1px solid var(--border); padding:12px 16px; font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+.remaining-notice .rem-count { color:var(--green); font-size:14px; }
+.error-box { background:rgba(248,113,113,0.05); border:1px solid rgba(248,113,113,0.3); padding:20px; font-family:var(--mono); font-size:12px; color:var(--red); line-height:1.7; display:none; white-space:pre-wrap; }
+.error-box.active { display:block; }
+
+footer { border-top:1px solid var(--border); padding:24px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+footer p { font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+footer a { color:var(--green); text-decoration:none; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+@media (max-width:720px) { .main{grid-template-columns:1fr;} .hero-title{font-size:3rem;} .usage-badge{display:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">GB</div>
+        <div class="logo-text">Game<span>Balance</span> GPT</div>
+      </div>
+      <div class="header-right">
+        <div class="usage-badge">
+          <div class="usage-pips" id="usagePips"></div>
+          <span id="usageLabel" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">3 left today</span>
+        </div>
+        <div class="status-pill"><span class="status-dot"></span><span>AI Online</span></div>
+        <span class="built-by">by <a href="https://avijitwise.com">Avijit</a></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-label">// AI-Powered Game Design Tool</div>
+    <h1 class="hero-title">Tune difficulty.<br><em>Ship better</em> games.</h1>
+    <p class="hero-desc">Input your game's engagement metrics and get <strong>AI-generated difficulty recommendations</strong> — curves, reward pacing, and ready-to-deploy JSON configs. Built from real experience at <strong>MPL ($50M ARR)</strong>.</p>
+    <div class="limit-notice">
+      <span class="limit-notice-icon">⬡</span>
+      <span><strong>3 free analyses per day</strong> per visitor — no sign-up needed. Powered by the Claude API, running securely on the server.</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- INPUT -->
+    <div class="panel">
+      <div class="panel-title">Game Parameters</div>
+
+      <div class="form-group">
+        <label class="form-label">Game Name</label>
+        <input type="text" class="form-input" id="gameName" placeholder="e.g. Brick Blaster, Fruit Ninja..."/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Game Genre</label>
+        <select class="form-select" id="gameGenre">
+          <option value="">Select genre...</option>
+          <option value="Casual Arcade">Casual Arcade</option>
+          <option value="Real Money Gaming (RMG)">Real Money Gaming (RMG)</option>
+          <option value="Puzzle">Puzzle</option>
+          <option value="Hyper-Casual">Hyper-Casual</option>
+          <option value="Card / Board Game">Card / Board Game</option>
+          <option value="Battle Royale">Battle Royale</option>
+          <option value="Skill-Based Shooter">Skill-Based Shooter</option>
+          <option value="Runner">Runner</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">D7 Retention Rate</label>
+        <div class="slider-row">
+          <input type="range" class="form-slider" id="d7Retention" min="0" max="60" value="20" oninput="updateSlider('d7Retention','d7Val','%')"/>
+          <span class="slider-val" id="d7Val">20%</span>
+        </div>
+        <div class="form-hint">Industry avg for casual: 15–25%</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Win Rate (Player vs Game)</label>
+        <div class="slider-row">
+          <input type="range" class="form-slider" id="winRate" min="0" max="100" value="45" oninput="updateSlider('winRate','winVal','%')"/>
+          <span class="slider-val" id="winVal">45%</span>
+        </div>
+        <div class="form-hint">Optimal range: 40–60% for engagement</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Avg Session Length (minutes)</label>
+        <div class="slider-row">
+          <input type="range" class="form-slider" id="sessionLen" min="1" max="30" value="6" oninput="updateSlider('sessionLen','sessionVal',' min')"/>
+          <span class="slider-val" id="sessionVal">6 min</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sessions Per DAU (daily)</label>
+        <div class="slider-row">
+          <input type="range" class="form-slider" id="sessionsPerDau" min="1" max="20" value="4" oninput="updateSlider('sessionsPerDau','sessVal','')"/>
+          <span class="slider-val" id="sessVal">4</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Day 1 Drop-off Stage</label>
+        <select class="form-select" id="dropOffStage">
+          <option value="Tutorial / Onboarding">Tutorial / Onboarding</option>
+          <option value="First few levels (1–5)">First few levels (1–5)</option>
+          <option value="Mid-game difficulty spike">Mid-game difficulty spike</option>
+          <option value="After first loss / failure">After first loss / failure</option>
+          <option value="Post-reward / after first purchase">Post-reward / after first purchase</option>
+          <option value="No major drop-off identified">No major drop-off identified</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional Context (optional)</label>
+        <textarea class="form-textarea" id="problemDesc" placeholder="e.g. Players drop off after level 3. Win rate too high early, spikes hard at level 8..."></textarea>
+      </div>
+
+      <button class="analyze-btn" id="analyzeBtn" onclick="analyzeGame()">
+        <span class="btn-text">▶ &nbsp;Analyze & Generate Recommendations</span>
+      </button>
+      <div class="exhausted-msg" id="exhaustedMsg">
+        Daily limit reached (3 / 3)<br/>
+        <span style="font-size:9px; opacity:0.7;">Resets at midnight · Come back tomorrow</span>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results-panel">
+      <div class="panel-title">AI Analysis</div>
+      <div class="results-empty" id="emptyState">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-text">Enter game metrics and<br/>click Analyze to get<br/>AI-powered recommendations.</div>
+      </div>
+      <div class="loading" id="loadingState">
+        <div class="loader-bars">
+          <div class="loader-bar"></div><div class="loader-bar"></div>
+          <div class="loader-bar"></div><div class="loader-bar"></div><div class="loader-bar"></div>
+        </div>
+        <div class="loader-label">Analyzing game data...</div>
+      </div>
+      <div class="error-box" id="errorBox"></div>
+      <div class="results-content" id="resultsContent">
+        <div class="result-game-name" id="resultGameName"></div>
+        <div class="score-grid" id="scoreGrid"></div>
+        <div>
+          <div class="reco-title">Difficulty Recommendations</div>
+          <div class="reco-list" id="recoList"></div>
+        </div>
+        <div>
+          <div class="json-label">// Suggested JSON Config Changes</div>
+          <div class="json-block">
+            <button class="copy-json-btn" onclick="copyJson()">Copy</button>
+            <span id="jsonContent"></span>
+          </div>
+        </div>
+        <div class="remaining-notice" id="remainingNotice"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>GameBalance GPT · Built by <a href="https://avijitwise.com">Avijit Chakraborty</a></p>
+    <p>Powered by Claude · <a href="https://avijitwise.com#projects">More Projects →</a></p>
+  </footer>
+</div>
+
+<script>
+const DAILY_LIMIT = 3;
+function todayKey() { return 'gbgpt_' + new Date().toISOString().slice(0,10); }
+function getUsed() { return parseInt(localStorage.getItem(todayKey()) || '0'); }
+function incUsed() { localStorage.setItem(todayKey(), getUsed() + 1); }
+
+function renderPips() {
+  const used = getUsed();
+  const rem = Math.max(0, DAILY_LIMIT - used);
+  const pipsEl = document.getElementById('usagePips');
+  pipsEl.innerHTML = '';
+  for (let i = 0; i < DAILY_LIMIT; i++) {
+    const p = document.createElement('div');
+    p.className = 'pip';
+    p.style.background = i < used ? 'rgba(74,222,128,0.25)' : 'var(--green)';
+    pipsEl.appendChild(p);
+  }
+  document.getElementById('usageLabel').textContent = rem + ' left today';
+  if (rem === 0) {
+    document.getElementById('usageLabel').style.color = 'var(--red)';
+    document.getElementById('analyzeBtn').style.display = 'none';
+    document.getElementById('exhaustedMsg').style.display = 'block';
+  }
+}
+
+function updateSlider(id, valId, suffix) {
+  document.getElementById(valId).textContent = document.getElementById(id).value + suffix;
+}
+
+function scoreClass(metric, v) {
+  v = parseFloat(v);
+  if (metric === 'd7') return v >= 20 ? 'good' : v >= 10 ? 'warn' : 'bad';
+  if (metric === 'win') return (v >= 40 && v <= 65) ? 'good' : 'warn';
+  if (metric === 'sess') return v >= 5 ? 'good' : v >= 3 ? 'warn' : 'bad';
+  return 'warn';
+}
+
+async function analyzeGame() {
+  if (getUsed() >= DAILY_LIMIT) return;
+  const gameName = document.getElementById('gameName').value.trim() || 'Unnamed Game';
+  const gameGenre = document.getElementById('gameGenre').value || 'Casual Arcade';
+  const d7 = document.getElementById('d7Retention').value;
+  const winRate = document.getElementById('winRate').value;
+  const sessionLen = document.getElementById('sessionLen').value;
+  const sessionsPerDau = document.getElementById('sessionsPerDau').value;
+  const dropOff = document.getElementById('dropOffStage').value;
+  const problem = document.getElementById('problemDesc').value.trim();
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('errorBox').classList.remove('active');
+  document.getElementById('resultsContent').classList.remove('active');
+  document.getElementById('loadingState').classList.add('active');
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('analyzeBtn').querySelector('.btn-text').textContent = '⟳  Analyzing...';
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameName, gameGenre, d7, winRate, sessionLen, sessionsPerDau, dropOff, problem })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    incUsed();
+    renderPips();
+    renderResults(gameName, data.result, d7, winRate, sessionLen, data.usage);
+  } catch(err) {
+    showError(err.message);
+  } finally {
+    document.getElementById('loadingState').classList.remove('active');
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('analyzeBtn').querySelector('.btn-text').textContent = '▶  Analyze & Generate Recommendations';
+  }
+}
+
+function renderResults(gameName, r, d7, winRate, sessionLen, usage) {
+  document.getElementById('errorBox').classList.remove('active');
+  document.getElementById('resultGameName').innerHTML = `<em>${gameName}</em> — ${r.overall_health} <span style="font-size:1rem;color:var(--muted);font-style:normal;">Score: ${r.health_score}/100</span>`;
+  document.getElementById('scoreGrid').innerHTML = `
+    <div class="score-box"><div class="score-val ${scoreClass('d7',d7)}">${d7}<small style="font-size:1.2rem">%</small></div><div class="score-lbl">D7 Retention</div></div>
+    <div class="score-box"><div class="score-val ${scoreClass('win',winRate)}">${winRate}<small style="font-size:1.2rem">%</small></div><div class="score-lbl">Win Rate</div></div>
+    <div class="score-box"><div class="score-val ${scoreClass('sess',sessionLen)}">${sessionLen}<small style="font-size:1.2rem">m</small></div><div class="score-lbl">Avg Session</div></div>`;
+  const recoList = document.getElementById('recoList');
+  recoList.innerHTML = `<div class="reco-item" style="border-left-color:var(--muted);color:#8a9e8b;font-style:italic;">${r.summary}</div>`;
+  r.recommendations.forEach(rec => {
+    const cls = rec.priority==='High'?'priority-high':rec.priority==='Medium'?'priority-med':'priority-low';
+    const bcls = rec.priority==='High'?'high':rec.priority==='Medium'?'med':'low';
+    recoList.innerHTML += `<div class="reco-item ${cls}"><div class="reco-item-top"><span class="reco-item-label">${rec.title}</span><span class="priority-badge ${bcls}">${rec.priority}</span></div><div>${rec.action}</div><div style="margin-top:6px;font-size:11px;color:var(--green);font-family:var(--mono);">→ ${rec.expected_impact}</div></div>`;
+  });
+  document.getElementById('jsonContent').textContent = JSON.stringify(r.json_config, null, 2);
+  if (usage) {
+    document.getElementById('remainingNotice').innerHTML = `<span>Analyses remaining today</span><span class="rem-count">${usage.remaining} / ${usage.limit}</span>`;
+  }
+  document.getElementById('resultsContent').classList.add('active');
+}
+
+function showError(msg) {
+  document.getElementById('loadingState').classList.remove('active');
+  document.getElementById('emptyState').style.display = 'none';
+  const b = document.getElementById('errorBox');
+  b.textContent = msg; b.classList.add('active');
+}
+
+function copyJson() {
+  navigator.clipboard.writeText(document.getElementById('jsonContent').textContent).then(() => {
+    const btn = document.querySelector('.copy-json-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+renderPips();
+</script>
+</body>
+</html>
